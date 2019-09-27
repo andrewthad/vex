@@ -19,20 +19,7 @@ extra-source-files:  CHANGELOG.md
 
 library
   exposed-modules:
-    Data.Arithmetic.Unsafe
-    Data.Arithmetic.Gt
-    Data.Arithmetic.Lt
-    Data.Arithmetic.Plus
-    Data.Arithmetic.Equal
-    Data.Arithmetic.Types
-    Data.Arithmetic.Nat
     Data.Array.Indexed
-    Data.Array.Int
-    Data.Array.Char
-    Data.Array.Bool
-    Data.Array.Word16
-    Data.Array.Word64
-    Data.Array.DoublePair
     Data.Index
   -- other-modules:
   -- other-extensions:
@@ -41,5 +28,6 @@ library
     , primitive-checked >=0.7 && <0.8
     , run-st >=0.1 && <0.2
     , tuples >=0.1 && <0.2
+    , natural-arithmetic
   hs-source-dirs: src
   default-language: Haskell2010

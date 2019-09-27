@@ -20,33 +20,34 @@ module Data.Index
   , i01
   ) where
 
-import Data.Arithmetic.Types (type (<),Nat)
+import Arithmetic.Types (type (<),Nat)
 import Data.Kind (Type)
 import GHC.TypeNats (type (+))
-import Data.Arithmetic.Nat ((<?))
-import qualified Data.Arithmetic.Nat as Nat
-import qualified Data.Arithmetic.Lt as Lt
+import Arithmetic.Nat ((<?))
+import qualified Arithmetic.Nat as Nat
+import qualified Arithmetic.Lt as Lt
+import qualified Arithmetic.Lte as Lte
 import qualified GHC.TypeNats as GHC
 
 data Index :: GHC.Nat -> Type where
   Index :: (m < n) -> Nat m -> Index n
 
 incrementL :: forall m n. Nat m -> Index n -> Index (m + n)
-incrementL x (Index lt y) = Index (Lt.plus @m lt) (Nat.plus x y)
+incrementL x (Index lt y) = Index (Lt.incrementL @m lt) (Nat.plus x y)
 
 incrementR :: forall m n. Nat m -> Index n -> Index (n + m)
-incrementR x (Index lt y) = Index (Lt.plusR @m lt) (Nat.plus y x)
+incrementR x (Index lt y) = Index (Lt.incrementR @m lt) (Nat.plus y x)
 
 -- | This looks a lot like 'increment', but it does not increase
 -- the actual index, only the upper bound.
 incrementLimitL :: forall m n. Nat m -> Index n -> Index (m + n)
-incrementLimitL _ (Index lt y) = Index (Lt.incrementL @m lt) y
+incrementLimitL _ (Index lt y) = Index (Lt.weakenL @m lt) y
 
 incrementLimitR :: forall m n. Nat m -> Index n -> Index (n + m)
-incrementLimitR _ (Index lt y) = Index (Lt.incrementR @m lt) y
+incrementLimitR _ (Index lt y) = Index (Lt.plus lt (Lte.zero @m)) y
 
 i01 :: Index 1
-i01 = Index (Lt.zero @0) Nat.zero
+i01 = Index Lt.zero Nat.zero
 
 -- | A strict left monadic fold over the ascending indices from zero up to
 -- a given length.

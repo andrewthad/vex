@@ -31,17 +31,18 @@ import Prelude hiding (read,length)
 
 import Control.Monad.ST (ST,runST)
 import Control.Monad.Primitive (PrimMonad,PrimState)
-import Data.Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=))
+import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
 import Data.Primitive (Array,MutableArray)
 import Data.Kind (Type)
 import GHC.TypeNats (type (+))
 
-import qualified Data.Arithmetic.Plus as Plus
-import qualified Data.Arithmetic.Equal as Equal
-import qualified Data.Arithmetic.Lt as Lt
+import qualified Arithmetic.Plus as Plus
+import qualified Arithmetic.Equal as Equal
+import qualified Arithmetic.Lt as Lt
+import qualified Arithmetic.Lte as Lte
+import qualified Arithmetic.Nat as Nat
 import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
-import qualified Data.Arithmetic.Nat as Nat
 
 newtype Vector :: GHC.Nat -> Type -> Type where
   Vector :: Array a -> Vector n a
@@ -124,7 +125,7 @@ copy ::
   -> Nat n
   -> ST s ()
 -- this is a core operation
-copy Lt Lt (MutableVector dst) (Nat doff) (Vector src) (Nat soff) (Nat len) =
+copy Lte Lte (MutableVector dst) (Nat doff) (Vector src) (Nat soff) (Nat len) =
   PM.copyArray dst doff src soff len
 
 append :: forall m n a. Vector m a -> Vector n a -> Vector (m + n) a
@@ -134,14 +135,12 @@ append x y = runST $ do
   let ylen = length y
   r <- new (Nat.plus xlen ylen)
   copy
-    ( Lt.substituteR (Equal.symmetric (Plus.associative @m @n @1))
-    $ Lt.plus @m (Lt.zero @n)
-    )
-    (Lt.plus @m (Lt.zero @0))
+    (Lte.incrementL @m (Lte.zero @n))
+    Lte.reflexive
     r Nat.zero x Nat.zero xlen
   copy
-    (Lt.plus @(m + n) (Lt.zero @0))
-    (Lt.plus @n (Lt.zero @0))
+    Lte.reflexive
+    Lte.reflexive
     r xlen y Nat.zero ylen
   unsafeFreeze r
 
