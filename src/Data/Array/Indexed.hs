@@ -20,6 +20,8 @@ module Data.Array.Indexed
   , copy
   , append
   , singleton
+  , doubleton
+  , tripleton
   , replicateM
   , unsafeFreeze
   , new
@@ -71,6 +73,28 @@ singleton ::
   -> Vector 1 a
 {-# INLINE singleton #-}
 singleton x = runST (replicateM Nat.one x >>= unsafeFreeze)
+
+doubleton ::
+     a
+  -> a
+  -> Vector 2 a
+{-# INLINE doubleton #-}
+doubleton x y = runST $ do
+  v <- replicateM (Nat.constant @2) x
+  write Lt.constant v (Nat.constant @1) y
+  unsafeFreeze v
+
+tripleton ::
+     a
+  -> a
+  -> a
+  -> Vector 3 a
+{-# INLINE tripleton #-}
+tripleton x y z = runST $ do
+  v <- replicateM (Nat.constant @3) x
+  write Lt.constant v (Nat.constant @1) y
+  write Lt.constant v (Nat.constant @2) z
+  unsafeFreeze v
 
 length :: Vector n a -> Nat n
 {-# INLINE length #-}

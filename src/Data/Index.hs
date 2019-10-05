@@ -16,6 +16,7 @@ module Data.Index
   , incrementLimitL
     -- * Functions
   , ascendM
+  , ascendM1
     -- * Constants
   , i01
   ) where
@@ -57,5 +58,20 @@ ascendM f n = go Nat.zero mempty
   where
   go :: Nat p -> a -> m a
   go !ix !a = case ix <? n of
-    Just lt -> f (Index lt ix) >>= go (Nat.succ ix)
+    Just lt -> do
+      b <- f (Index lt ix)
+      go (Nat.succ ix) (a <> b)
+    Nothing -> pure a
+
+-- | A strict left monadic fold over the ascending indices from zero up to
+-- a given length.
+ascendM1 :: forall m n a. (Semigroup a, Monad m) => (Index n -> m a) -> Nat n -> (0 < n) -> m a
+{-# INLINE ascendM1 #-}
+ascendM1 f n !gt = go Nat.one =<< f (Index gt Nat.zero) 
+  where
+  go :: Nat p -> a -> m a
+  go !ix !a = case ix <? n of
+    Just lt -> do
+      b <- f (Index lt ix)
+      go (Nat.succ ix) (a <> b)
     Nothing -> pure a
