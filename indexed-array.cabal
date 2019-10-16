@@ -21,6 +21,8 @@ library
   exposed-modules:
     Data.Array.Indexed
     Data.Index
+    Vector.Fin
+    Vector.Fin8
   -- other-modules:
   -- other-extensions:
   build-depends:
