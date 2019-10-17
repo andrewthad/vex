@@ -3,7 +3,7 @@ cabal-version:       2.2
 -- init'.  For further documentation, see
 -- http://haskell.org/cabal/users-guide/
 
-name:                indexed-array
+name:                vex
 version:             0.1.0.0
 synopsis:            Length-indexed arrays with fast access
 -- description:
