@@ -10,7 +10,7 @@
 {-# language TypeApplications #-}
 {-# language TypeOperators #-}
 
-module Data.Array.Indexed
+module Vector.Boxed
   ( Vector
   , MutableVector
   , index
