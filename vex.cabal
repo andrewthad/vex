@@ -22,6 +22,7 @@ library
     Vector.Boxed
     Vector.Fin
     Vector.Fin8
+    Vector.MutableByteArray
   build-depends:
     , base >=4.12.0.0 && <5
     , primitive-checked >=0.7 && <0.8
@@ -29,4 +30,5 @@ library
     , tuples >=0.1 && <0.2
     , natural-arithmetic >=0.1 && <0.2
   hs-source-dirs: src
+  ghc-options: -O2 -Wall
   default-language: Haskell2010
