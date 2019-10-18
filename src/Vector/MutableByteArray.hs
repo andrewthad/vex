@@ -1,3 +1,4 @@
+{-# language BangPatterns #-}
 {-# language DataKinds #-}
 {-# language DeriveFoldable #-}
 {-# language DeriveFunctor #-}

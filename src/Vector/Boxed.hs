@@ -23,6 +23,7 @@ module Vector.Boxed
   , doubleton
   , tripleton
   , replicateM
+  , initialized
   , unsafeFreeze
   , new
   , forget
@@ -67,6 +68,14 @@ replicateM ::
 {-# INLINE replicateM #-}
 -- this is a core operation
 replicateM (Nat n) a = fmap MutableVector (PM.newArray n a)
+
+initialized ::
+     Nat n
+  -> a
+  -> ST s (MutableVector s n a)
+{-# INLINE initialized #-}
+-- this is a core operation
+initialized = replicateM
 
 singleton ::
      a
