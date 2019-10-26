@@ -24,6 +24,7 @@ module Vector.Boxed
   , tripleton
   , replicateM
   , initialized
+  , shrink
   , unsafeFreeze
   , new
   , forget
@@ -137,6 +138,20 @@ write ::
 {-# INLINE write #-}
 -- this is a core operation
 write Lt (MutableVector arr) (Nat i) x = PM.writeArray arr i x
+
+-- | Shrink the argument vector, possibly in-place.
+-- The argument vector must not be reused after being
+-- passed to this function.
+shrink ::
+     (m <= n)
+  -> Nat m
+  -> MutableVector s n a -- ^ Vector to shrink
+  -> ST s (MutableVector s m a)
+-- this is a core operation
+shrink Lte (Nat sz) (MutableVector x) =
+  if PM.sizeofMutableArray x == sz
+    then pure (MutableVector x)
+    else fmap MutableVector (PM.cloneMutableArray x 0 sz)
 
 -- | Freeze the mutable vector. The argument must not be reused after
 -- this function is called on it. 
