@@ -25,6 +25,9 @@ module Vector.Fin
   , index
   , read
   , write
+    -- Freeze
+  , shrink
+  , unsafeFreeze
   ) where
 
 import Prelude hiding (read)
@@ -97,4 +100,22 @@ write ::
 write Lt (MutableVector arr) (Nat (I# i)) (Fin (Nat (I# e)) Lt) = ST
   (\s0 -> case Exts.writeIntArray# arr i e s0 of
     s1 -> (# s1, () #)
+  )
+
+shrink ::
+     (m <= n)
+  -> Nat m
+  -> MutableVector s b n -- ^ Vector to shrink
+  -> ST s (MutableVector s b m)
+{-# inline shrink #-}
+shrink Lte (Nat (I# sz)) (MutableVector x) = ST
+  (\s0 -> (# Exts.shrinkMutableByteArray# x (sz *# case sizeOf @Int undefined of I# i -> i) s0, MutableVector x #) )
+
+unsafeFreeze ::
+     MutableVector s b n
+  -> ST s (Vector b n)
+{-# inline unsafeFreeze #-}
+unsafeFreeze (MutableVector marr) = ST
+  (\s0 -> case Exts.unsafeFreezeByteArray# marr s0 of
+    (# s1, arr #) -> (# s1, Vector arr #)
   )
