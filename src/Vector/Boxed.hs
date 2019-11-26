@@ -19,6 +19,7 @@ module Vector.Boxed
   , length
   , copy
   , append
+  , foldr
   , singleton
   , doubleton
   , tripleton
@@ -31,10 +32,11 @@ module Vector.Boxed
   , with
   ) where
 
-import Prelude hiding (read,length)
+import Prelude hiding (read,length,foldr)
 
 import Control.Monad.ST (ST,runST)
 import Control.Monad.Primitive (PrimMonad,PrimState)
+import Arithmetic.Types (Fin(Fin))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
 import Data.Primitive (Array,MutableArray)
 import Data.Kind (Type)
@@ -42,6 +44,7 @@ import GHC.TypeNats (type (+))
 
 import qualified Arithmetic.Plus as Plus
 import qualified Arithmetic.Equal as Equal
+import qualified Arithmetic.Fin as Fin
 import qualified Arithmetic.Lt as Lt
 import qualified Arithmetic.Lte as Lte
 import qualified Arithmetic.Nat as Nat
@@ -175,6 +178,10 @@ copy ::
 -- this is a core operation
 copy Lte Lte (MutableVector dst) (Nat doff) (Vector src) (Nat soff) (Nat len) =
   PM.copyArray dst doff src soff len
+
+foldr :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
+{-# inline foldr #-}
+foldr f b0 n v = Fin.descend n b0 (\(Fin ix lt) b -> f (index lt v ix) b)
 
 append :: forall m n a. Vector m a -> Vector n a -> Vector (m + n) a
 -- Not a core operation. Defined safely using other primitives.
