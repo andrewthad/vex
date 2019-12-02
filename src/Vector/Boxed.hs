@@ -1,3 +1,4 @@
+{-# language BangPatterns #-}
 {-# language DataKinds #-}
 {-# language DeriveFoldable #-}
 {-# language DeriveFunctor #-}
@@ -30,13 +31,14 @@ module Vector.Boxed
   , new
   , forget
   , with
+  , substitute
   ) where
 
 import Prelude hiding (read,length,foldr)
 
 import Control.Monad.ST (ST,runST)
 import Control.Monad.Primitive (PrimMonad,PrimState)
-import Arithmetic.Types (Fin(Fin))
+import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
 import Data.Primitive (Array,MutableArray)
 import Data.Kind (Type)
@@ -64,6 +66,14 @@ new ::
 {-# INLINE new #-}
 -- this is not a core operation
 new n = replicateM n errorThunk
+
+substitute ::
+     (m :=: n)
+  -> Vector m a
+  -> Vector n a
+{-# INLINE substitute #-}
+-- this is a core operation
+substitute !_ (Vector x) = Vector x
 
 replicateM ::
      Nat n
