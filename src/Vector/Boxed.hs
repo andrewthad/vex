@@ -21,6 +21,7 @@ module Vector.Boxed
   , copy
   , append
   , foldr
+  , foldr'
   , singleton
   , doubleton
   , tripleton
@@ -192,6 +193,10 @@ copy Lte Lte (MutableVector dst) (Nat doff) (Vector src) (Nat soff) (Nat len) =
 foldr :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
 {-# inline foldr #-}
 foldr f b0 n v = Fin.descend n b0 (\(Fin ix lt) b -> f (index lt v ix) b)
+
+foldr' :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
+{-# inline foldr' #-}
+foldr' f b0 n v = Fin.descend' n b0 (\(Fin ix lt) b -> f (index lt v ix) b)
 
 append :: forall m n a. Vector m a -> Vector n a -> Vector (m + n) a
 -- Not a core operation. Defined safely using other primitives.
