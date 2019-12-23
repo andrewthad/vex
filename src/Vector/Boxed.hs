@@ -19,6 +19,7 @@ module Vector.Boxed
   , write
   , length
   , copy
+  , duplicate
   , append
   , foldr
   , foldr'
@@ -152,6 +153,12 @@ write ::
 {-# INLINE write #-}
 -- this is a core operation
 write Lt (MutableVector arr) (Nat i) x = PM.writeArray arr i x
+
+-- | Make a copy of the mutable vector.
+duplicate :: Nat n -> MutableVector s n a -> ST s (MutableVector s n a)
+duplicate (Nat n) (MutableVector arr) = do
+  dst <- PM.cloneMutableArray arr 0 n
+  pure (MutableVector dst)
 
 -- | Shrink the argument vector, possibly in-place.
 -- The argument vector must not be reused after being
