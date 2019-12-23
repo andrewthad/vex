@@ -19,6 +19,8 @@ module Vector.MutableByteArray
     MutableVector
     -- Create
   , uninitialized
+    -- Copy
+  , duplicate
     -- Index
   , read
   , write
@@ -71,3 +73,11 @@ write ::
 -- this is a core operation
 write Lt (MutableVector arr) (Nat (I# i)) (MutableByteArray x) = ST
   (\s0 -> (# Exts.writeMutableByteArrayArray# arr i x s0, () #))
+
+-- | Make a copy of the mutable vector.
+duplicate :: Nat n -> MutableVector s n -> ST s (MutableVector s n)
+duplicate (Nat (I# n)) (MutableVector arr) = ST
+  (\s0 -> case Exts.newArrayArray# n s0 of
+    (# s1, dst #) -> case Exts.copyMutableArrayArray# arr 0# dst 0# n s1 of
+      s2 -> (# s2, MutableVector arr #)
+  )
