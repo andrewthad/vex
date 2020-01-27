@@ -30,6 +30,7 @@ module Vector.Boxed
   , initialized
   , shrink
   , unsafeFreeze
+  , thaw
   , new
   , forget
   , with
@@ -196,6 +197,11 @@ copy ::
 -- this is a core operation
 copy Lte Lte (MutableVector dst) (Nat doff) (Vector src) (Nat soff) (Nat len) =
   PM.copyArray dst doff src soff len
+
+thaw :: Nat n -> Vector n a -> ST s (MutableVector s n a)
+thaw (Nat n) (Vector x) = do
+  y <- PM.thawArray x 0 n
+  pure (MutableVector y)
 
 foldr :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
 {-# inline foldr #-}
