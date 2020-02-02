@@ -34,11 +34,12 @@ module Vector.Fin8
     -- Conversion
   , expose
   , unsafeCast
+  , unsafeCastMutable
   ) where
 
 import Prelude hiding (read)
 
-import Data.Primitive (ByteArray(ByteArray))
+import Data.Primitive (ByteArray(ByteArray),MutableByteArray(MutableByteArray))
 import GHC.Exts (Int(I#),(*#))
 import GHC.ST (ST(ST))
 import Data.Kind (Type)
@@ -138,6 +139,10 @@ expose (Vector x) = ByteArray x
 -- than 256.
 unsafeCast :: ByteArray -> Vector b n
 unsafeCast (ByteArray x) = Vector x
+
+-- | This is really unsafe. See unsafeCast.
+unsafeCastMutable :: MutableByteArray s -> MutableVector s b n
+unsafeCastMutable (MutableByteArray x) = MutableVector x
 
 substitute :: (m :=: n) -> Vector b m -> Vector b n
 substitute Eq (Vector a) = Vector a
