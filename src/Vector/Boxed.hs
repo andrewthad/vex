@@ -6,10 +6,12 @@
 {-# language ExplicitNamespaces #-}
 {-# language GADTSyntax #-}
 {-# language KindSignatures #-}
+{-# language MagicHash #-}
 {-# language RankNTypes #-}
 {-# language ScopedTypeVariables #-}
 {-# language TypeApplications #-}
 {-# language TypeOperators #-}
+{-# language UnboxedTuples #-}
 
 module Vector.Boxed
   ( Vector
@@ -26,6 +28,7 @@ module Vector.Boxed
   , singleton
   , doubleton
   , tripleton
+  , replicate
   , replicateM
   , initialized
   , shrink
@@ -35,16 +38,17 @@ module Vector.Boxed
   , forget
   , with
   , substitute
+  , runST
   ) where
 
-import Prelude hiding (read,length,foldr)
+import Prelude hiding (read,length,foldr,replicate)
 
-import Control.Monad.ST (ST,runST)
-import Control.Monad.Primitive (PrimMonad,PrimState)
 import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
-import Data.Primitive (Array,MutableArray)
+import Control.Monad.Primitive (PrimMonad,PrimState)
 import Data.Kind (Type)
+import Data.Primitive (Array,MutableArray)
+import GHC.ST (ST(ST))
 import GHC.TypeNats (type (+))
 
 import qualified Arithmetic.Plus as Plus
@@ -55,6 +59,7 @@ import qualified Arithmetic.Lte as Lte
 import qualified Arithmetic.Nat as Nat
 import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
+import qualified GHC.Exts as Exts
 
 newtype Vector :: GHC.Nat -> Type -> Type where
   Vector :: Array a -> Vector n a
@@ -85,6 +90,9 @@ replicateM ::
 {-# INLINE replicateM #-}
 -- this is a core operation
 replicateM (Nat n) a = fmap MutableVector (PM.newArray n a)
+
+replicate :: Nat n -> a -> Vector n a
+replicate n a = runST (replicateM n a >>= unsafeFreeze)
 
 initialized ::
      Nat n
@@ -239,3 +247,7 @@ errorThunk = error "Data.Array.Indexed: uninitialized element"
 
 with :: Array a -> (forall n. Vector n a -> b) -> b
 with x f = f (Vector x)
+
+runST :: (forall s. ST s (Vector n a)) -> Vector n a
+{-# inline runST #-}
+runST f = Vector (PM.Array (Exts.runRW# (\s0 -> case f of { ST g -> case g s0 of { (# _, Vector (PM.Array r) #) -> r }})))
