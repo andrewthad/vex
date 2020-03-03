@@ -2,6 +2,7 @@
 {-# language DataKinds #-}
 {-# language DeriveFoldable #-}
 {-# language DeriveFunctor #-}
+{-# language DeriveTraversable #-}
 {-# language DerivingStrategies #-}
 {-# language ExplicitNamespaces #-}
 {-# language GADTSyntax #-}
@@ -63,7 +64,7 @@ import qualified GHC.Exts as Exts
 
 newtype Vector :: GHC.Nat -> Type -> Type where
   Vector :: Array a -> Vector n a
-  deriving stock (Functor,Foldable)
+  deriving stock (Functor,Foldable,Traversable)
 
 newtype MutableVector :: Type -> GHC.Nat -> Type -> Type where
   MutableVector :: MutableArray s a -> MutableVector s n a
