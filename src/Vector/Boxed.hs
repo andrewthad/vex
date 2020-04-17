@@ -40,6 +40,7 @@ module Vector.Boxed
   , with
   , substitute
   , runST
+  , unsafeCast
   ) where
 
 import Prelude hiding (read,length,foldr,replicate)
@@ -252,3 +253,6 @@ with x f = f (Vector x)
 runST :: (forall s. ST s (Vector n a)) -> Vector n a
 {-# inline runST #-}
 runST f = Vector (PM.Array (Exts.runRW# (\s0 -> case f of { ST g -> case g s0 of { (# _, Vector (PM.Array r) #) -> r }})))
+
+unsafeCast :: Array a -> Vector n a
+unsafeCast = Vector
