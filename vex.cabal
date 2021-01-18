@@ -22,6 +22,7 @@ library
     Vector.Boxed
     Vector.Fin
     Vector.Fin8
+    Vector.Fin16
     Vector.MaybeFin8
     Vector.MutableByteArray
   build-depends:
