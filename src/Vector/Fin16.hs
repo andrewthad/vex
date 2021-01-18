@@ -19,6 +19,7 @@ module Vector.Fin16
   , MutableVector
     -- Create
   , uninitialized
+  , replicate
     -- Weaken
   , weakenMutable
   , substitute
@@ -37,11 +38,13 @@ module Vector.Fin16
   , unsafeCastMutable
   ) where
 
-import Prelude hiding (read)
+import Prelude hiding (read,replicate)
 
+import Control.Monad.ST.Run (runByteArrayST)
 import Data.Primitive (ByteArray(ByteArray),MutableByteArray(MutableByteArray))
 import GHC.Exts (Int(I#),(*#))
 import GHC.ST (ST(ST))
+import Data.Word (Word16)
 import Data.Kind (Type)
 import GHC.TypeNats (type (+))
 import Foreign.Storable (sizeOf)
@@ -49,6 +52,7 @@ import Arithmetic.Types (Fin(Fin))
 import Arithmetic.Unsafe (type (<=)(Lte))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt),type (:=:)(Eq))
 
+import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
 import qualified GHC.Exts as Exts
 
@@ -70,6 +74,17 @@ uninitialized Lte (Nat (I# sz)) = ST
   ( \s0 -> case Exts.newByteArray# sz s0 of
     (# s1, arr #) -> (# s1, MutableVector arr #)
   )
+
+-- | Create an array in which all elements are the same value.
+replicate :: forall (b :: GHC.Nat) (n :: GHC.Nat).
+  (b <= 65536) -> Nat n -> Fin b -> Vector b n
+replicate _ (Nat sz) (Fin (Nat e) _) =
+  let res = runByteArrayST $ do
+        dst <- PM.newByteArray (2 * sz)
+        PM.setByteArray dst 0 sz (fromIntegral @Int @Word16 e)
+        PM.unsafeFreezeByteArray dst
+   in case res of
+        ByteArray x -> Vector x
 
 -- | Weaken the bound on an array of finite naturals. The argument
 -- array must not be reused after being passed to this function.
