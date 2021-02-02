@@ -71,7 +71,7 @@ uninitialized :: forall (b :: GHC.Nat) (n :: GHC.Nat) (s :: Type).
   (b <= 65536) -> Nat n -> ST s (MutableVector s b n)
 {-# inline uninitialized #-}
 uninitialized Lte (Nat (I# sz)) = ST
-  ( \s0 -> case Exts.newByteArray# sz s0 of
+  ( \s0 -> case Exts.newByteArray# (sz *# 2# ) s0 of
     (# s1, arr #) -> (# s1, MutableVector arr #)
   )
 
@@ -143,7 +143,7 @@ shrink ::
   -> ST s (MutableVector s b m)
 {-# inline shrink #-}
 shrink Lte (Nat (I# sz)) (MutableVector x) = ST
-  (\s0 -> (# Exts.shrinkMutableByteArray# x sz s0, MutableVector x #) )
+  (\s0 -> (# Exts.shrinkMutableByteArray# x (sz *# 2# ) s0, MutableVector x #) )
 
 expose :: Vector b n -> ByteArray
 {-# inline expose #-}
@@ -167,7 +167,7 @@ substituteBound Eq (Vector a) = Vector a
 
 equals :: Nat n -> Vector b n -> Vector b n -> Bool
 equals !(Nat (I# i)) (Vector x) (Vector y) =
-  case Exts.compareByteArrays# x 0# y 0# i of
+  case Exts.compareByteArrays# x 0# y 0# (i *# 2# ) of
     0# -> True
     _ -> False
 
