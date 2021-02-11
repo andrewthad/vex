@@ -77,6 +77,7 @@ weakenMutable ::
      (b <= c) -- ^ Evidence that the new bound exceeds the old bound
   -> MutableVector s b n -- ^ Argument must not be reused
   -> MutableVector s c n
+{-# inline weakenMutable #-}
 weakenMutable Lte (MutableVector v) = MutableVector v
 
 read ::

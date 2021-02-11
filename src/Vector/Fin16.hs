@@ -78,6 +78,7 @@ uninitialized Lte (Nat (I# sz)) = ST
 -- | Create an array in which all elements are the same value.
 replicate :: forall (b :: GHC.Nat) (n :: GHC.Nat).
   (b <= 65536) -> Nat n -> Fin b -> Vector b n
+{-# inline replicate #-}
 replicate _ (Nat sz) (Fin (Nat e) _) =
   let res = runByteArrayST $ do
         dst <- PM.newByteArray (2 * sz)
@@ -93,6 +94,7 @@ weakenMutable ::
   -> (b <= c) -- ^ Evidence that the new bound exceeds the old bound
   -> MutableVector s b n -- ^ Argument must not be reused
   -> MutableVector s c n
+{-# inline weakenMutable #-}
 weakenMutable Lte Lte (MutableVector v) = MutableVector v
 
 index ::
@@ -153,19 +155,24 @@ expose (Vector x) = ByteArray x
 -- all bytes are less than @b@. Do not choose a @b@ greater
 -- than 65536.
 unsafeCast :: ByteArray -> Vector b n
+{-# inline unsafeCast #-}
 unsafeCast (ByteArray x) = Vector x
 
 -- | This is really unsafe. See unsafeCast.
 unsafeCastMutable :: MutableByteArray s -> MutableVector s b n
+{-# inline unsafeCastMutable #-}
 unsafeCastMutable (MutableByteArray x) = MutableVector x
 
 substitute :: (m :=: n) -> Vector b m -> Vector b n
+{-# inline substitute #-}
 substitute Eq (Vector a) = Vector a
 
 substituteBound :: (b :=: c) -> Vector b m -> Vector c n
+{-# inline substituteBound #-}
 substituteBound Eq (Vector a) = Vector a
 
 equals :: Nat n -> Vector b n -> Vector b n -> Bool
+{-# inline equals #-}
 equals !(Nat (I# i)) (Vector x) (Vector y) =
   case Exts.compareByteArrays# x 0# y 0# (i *# 2# ) of
     0# -> True

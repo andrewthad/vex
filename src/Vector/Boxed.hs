@@ -94,6 +94,7 @@ replicateM ::
 replicateM (Nat n) a = fmap MutableVector (PM.newArray n a)
 
 replicate :: Nat n -> a -> Vector n a
+{-# inline replicate #-}
 replicate n a = runST (replicateM n a >>= unsafeFreeze)
 
 initialized ::
@@ -167,6 +168,7 @@ write Lt (MutableVector arr) (Nat i) x = PM.writeArray arr i x
 
 -- | Make a copy of the mutable vector.
 duplicate :: Nat n -> MutableVector s n a -> ST s (MutableVector s n a)
+{-# INLINE duplicate #-}
 duplicate (Nat n) (MutableVector arr) = do
   dst <- PM.cloneMutableArray arr 0 n
   pure (MutableVector dst)
@@ -180,6 +182,7 @@ shrink ::
   -> MutableVector s n a -- ^ Vector to shrink
   -> ST s (MutableVector s m a)
 -- this is a core operation
+{-# INLINE shrink #-}
 shrink Lte (Nat sz) (MutableVector x) =
   if PM.sizeofMutableArray x == sz
     then pure (MutableVector x)
@@ -205,10 +208,12 @@ copy ::
   -> Nat n
   -> ST s ()
 -- this is a core operation
+{-# inline copy #-}
 copy Lte Lte (MutableVector dst) (Nat doff) (Vector src) (Nat soff) (Nat len) =
   PM.copyArray dst doff src soff len
 
 thaw :: Nat n -> Vector n a -> ST s (MutableVector s n a)
+{-# inline thaw #-}
 thaw (Nat n) (Vector x) = do
   y <- PM.thawArray x 0 n
   pure (MutableVector y)
@@ -248,6 +253,7 @@ errorThunk :: a
 errorThunk = error "Data.Array.Indexed: uninitialized element"
 
 with :: Array a -> (forall n. Vector n a -> b) -> b
+{-# inline with #-}
 with x f = f (Vector x)
 
 runST :: (forall s. ST s (Vector n a)) -> Vector n a
@@ -255,4 +261,5 @@ runST :: (forall s. ST s (Vector n a)) -> Vector n a
 runST f = Vector (PM.Array (Exts.runRW# (\s0 -> case f of { ST g -> case g s0 of { (# _, Vector (PM.Array r) #) -> r }})))
 
 unsafeCast :: Array a -> Vector n a
+{-# inline unsafeCast #-}
 unsafeCast = Vector
