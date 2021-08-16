@@ -23,6 +23,7 @@ module Vector.Boxed
   , length
   , copy
   , duplicate
+  , generate
   , append
   , foldr
   , foldr'
@@ -225,6 +226,16 @@ foldr f b0 n v = Fin.descend n b0 (\(Fin ix lt) b -> f (index lt v ix) b)
 foldr' :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
 {-# inline foldr' #-}
 foldr' f b0 n v = Fin.descend' n b0 (\(Fin ix lt) b -> f (index lt v ix) b)
+
+generate :: Nat n -> (Fin n -> a) -> Vector n a
+{-# inline generate #-}
+generate !n f = runST $ do
+  marr <- replicateM n errorThunk
+  Fin.ascendM_ n
+    (\(Fin ix lt) -> do
+      write lt marr ix (f (Fin ix lt))
+    )
+  unsafeFreeze marr
 
 append :: forall m n a. Vector m a -> Vector n a -> Vector (m + n) a
 -- Not a core operation. Defined safely using other primitives.
