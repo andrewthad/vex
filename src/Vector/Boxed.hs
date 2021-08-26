@@ -20,6 +20,7 @@ module Vector.Boxed
   , index
   , read
   , write
+  , update
   , length
   , copy
   , duplicate
@@ -274,3 +275,16 @@ runST f = Vector (PM.Array (Exts.runRW# (\s0 -> case f of { ST g -> case g s0 of
 unsafeCast :: Array a -> Vector n a
 {-# inline unsafeCast #-}
 unsafeCast = Vector
+
+update ::
+     (m < n) -- ^ Evidence the index is in-bounds
+  -> Nat n -- ^ Array length
+  -> Vector n a -- ^ Array
+  -> Nat m -- ^ Index
+  -> a -- ^ new value
+  -> Vector n a
+{-# INLINE update #-}
+update lt n v ix a = runST $ do
+  v' <- thaw n v
+  write lt v' ix a
+  unsafeFreeze v'
