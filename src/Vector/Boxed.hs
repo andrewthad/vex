@@ -27,6 +27,7 @@ module Vector.Boxed
   , generate
   , generateST
   , append
+  , zipWith'
   , foldr
   , foldr'
   , singleton
@@ -299,3 +300,17 @@ update lt n v ix a = runST $ do
   v' <- thaw n v
   write lt v' ix a
   unsafeFreeze v'
+
+zipWith' ::
+     (a -> b -> c)
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> Vector n c
+{-# inline zipWith' #-}
+zipWith' f !n !as !bs = runST $ do
+  dst <- initialized n errorThunk
+  Fin.ascendM_ n $ \(Fin ix lt) -> do
+    let !z = f (index lt as ix) (index lt bs ix)
+    write lt dst ix z
+  unsafeFreeze dst
