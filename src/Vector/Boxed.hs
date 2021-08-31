@@ -26,6 +26,7 @@ module Vector.Boxed
   , duplicate
   , generate
   , generateST
+  , traverseST
   , append
   , zipWith'
   , foldr
@@ -247,6 +248,16 @@ generateST !n f = do
   Fin.ascendM_ n
     (\(Fin ix lt) -> do
       write lt marr ix =<< f (Fin ix lt)
+    )
+  unsafeFreeze marr
+
+traverseST :: Nat n -> (a -> ST s b) -> Vector n a -> ST s (Vector n b)
+{-# inline traverseST #-}
+traverseST !n f v = do
+  marr <- replicateM n errorThunk
+  Fin.ascendM_ n
+    (\(Fin ix lt) -> do
+      write lt marr ix =<< f (index lt v ix)
     )
   unsafeFreeze marr
 
