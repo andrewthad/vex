@@ -31,6 +31,7 @@ module Vector.Boxed
   , zipWith'
   , foldr
   , foldr'
+  , empty
   , singleton
   , doubleton
   , tripleton
@@ -109,6 +110,10 @@ initialized ::
 {-# INLINE initialized #-}
 -- this is a core operation
 initialized = replicateM
+
+empty :: Vector 0 a
+{-# NOINLINE empty #-}
+empty = runST (replicateM Nat.zero errorThunk >>= unsafeFreeze)
 
 singleton ::
      a

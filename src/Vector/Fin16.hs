@@ -32,6 +32,9 @@ module Vector.Fin16
     -- Freeze
   , shrink
   , unsafeFreeze
+    -- Folds
+  , foldlM'
+  , traverse_
     -- Conversion
   , expose
   , unsafeCast
@@ -52,6 +55,7 @@ import Arithmetic.Types (Fin(Fin))
 import Arithmetic.Unsafe (type (<=)(Lte))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt),type (:=:)(Eq))
 
+import qualified Arithmetic.Fin as Fin
 import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
 import qualified GHC.Exts as Exts
@@ -178,5 +182,20 @@ equals !(Nat (I# i)) (Vector x) (Vector y) =
     0# -> True
     _ -> False
 
+foldlM' :: Monad m
+  => (a -> Fin b -> m a)
+  -> a              
+  -> Nat n          
+  -> Vector b n
+  -> m a
+{-# inline foldlM' #-}
+foldlM' g !a0 !n !v = Fin.ascendM n a0                                      
+  (\(Fin ix lt) !a -> g a (index lt v ix))                                  
 
-
+traverse_ :: Monad m
+  => (Fin b -> m a)
+  -> Nat n          
+  -> Vector b n
+  -> m ()
+{-# inline traverse_ #-}
+traverse_ g !n !v = Fin.ascendM_ n (\(Fin ix lt) -> g (index lt v ix))
