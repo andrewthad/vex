@@ -29,6 +29,7 @@ module Vector.Boxed
   , traverseST
   , append
   , zipWith'
+  , foldlZipWithM
   , foldr
   , foldr'
   , empty
@@ -330,3 +331,14 @@ zipWith' f !n !as !bs = runST $ do
     let !z = f (index lt as ix) (index lt bs ix)
     write lt dst ix z
   unsafeFreeze dst
+
+foldlZipWithM :: Monad m
+  => (c -> a -> b -> m c)
+  -> c
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> m c
+{-# inline foldlZipWithM #-}
+foldlZipWithM f z !n !as !bs = Fin.ascendM n z $ \(Fin ix lt) acc ->
+  f acc (index lt as ix) (index lt bs ix)
