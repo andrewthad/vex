@@ -33,6 +33,7 @@ module Vector.Boxed
   , foldlZipWithM
   , foldr
   , foldr'
+  , foldMap
   , empty
   , singleton
   , doubleton
@@ -51,7 +52,7 @@ module Vector.Boxed
   , unsafeCast
   ) where
 
-import Prelude hiding (read,length,foldr,replicate)
+import Prelude hiding (read,length,foldr,replicate,foldMap)
 
 import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
@@ -229,6 +230,11 @@ thaw :: Nat n -> Vector n a -> ST s (MutableVector s n a)
 thaw (Nat n) (Vector x) = do
   y <- PM.thawArray x 0 n
   pure (MutableVector y)
+
+-- | Monoidal accumulation backed by a lazy right fold.
+foldMap :: Monoid m => (a -> m) -> Nat n -> Vector n a -> m
+{-# inline foldMap #-}
+foldMap f = foldr (\x acc -> f x <> acc) mempty
 
 foldr :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
 {-# inline foldr #-}
