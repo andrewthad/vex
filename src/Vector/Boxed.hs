@@ -31,6 +31,7 @@ module Vector.Boxed
   , append
   , zipWith'
   , foldlZipWithM
+  , foldrMapZipWith
   , foldr
   , foldr'
   , foldMap
@@ -359,3 +360,14 @@ foldlZipWithM :: Monad m
 {-# inline foldlZipWithM #-}
 foldlZipWithM f z !n !as !bs = Fin.ascendM n z $ \(Fin ix lt) acc ->
   f acc (index lt as ix) (index lt bs ix)
+
+-- | Lazy right fold
+foldrMapZipWith :: Monoid m
+  => (a -> b -> m)
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> m
+{-# inline foldrMapZipWith #-}
+foldrMapZipWith f !n !as !bs =
+  Fin.descend n mempty (\(Fin ix lt) acc -> f (index lt as ix) (index lt bs ix) <> acc)
