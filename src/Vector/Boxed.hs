@@ -31,7 +31,7 @@ module Vector.Boxed
   , append
   , zipWith'
   , foldlZipWithM
-  , foldlZipWithM_
+  , zipM_
   , foldrMapZipWith
   , foldrZipWith
   , foldr
@@ -59,14 +59,11 @@ import Prelude hiding (read,length,foldr,replicate,foldMap)
 
 import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
-import Control.Monad.Primitive (PrimMonad,PrimState)
 import Data.Kind (Type)
 import Data.Primitive (Array,MutableArray)
 import GHC.ST (ST(ST))
 import GHC.TypeNats (type (+))
 
-import qualified Arithmetic.Plus as Plus
-import qualified Arithmetic.Equal as Equal
 import qualified Arithmetic.Fin as Fin
 import qualified Arithmetic.Lt as Lt
 import qualified Arithmetic.Lte as Lte
@@ -363,14 +360,14 @@ foldlZipWithM :: Monad m
 foldlZipWithM f z !n !as !bs = Fin.ascendM n z $ \(Fin ix lt) acc ->
   f acc (index lt as ix) (index lt bs ix)
 
-foldlZipWithM_ :: Monad m
+zipM_ :: Monad m
   => (a -> b -> m c)
   -> Nat n
   -> Vector n a
   -> Vector n b
   -> m ()
-{-# inline foldlZipWithM_ #-}
-foldlZipWithM_ f !n !as !bs = do
+{-# inline zipM_ #-}
+zipM_ f !n !as !bs = do
   Fin.ascendM_ n $ \(Fin ix lt) ->
     f (index lt as ix) (index lt bs ix)
   pure ()
