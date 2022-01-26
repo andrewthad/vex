@@ -32,6 +32,7 @@ module Vector.Boxed
   , zipWith'
   , foldlZipWithM
   , zipM_
+  , zip3M_
   , foldrMapZipWith
   , foldrZipWith
   , foldr
@@ -370,6 +371,19 @@ zipM_ :: Monad m
 zipM_ f !n !as !bs = do
   Fin.ascendM_ n $ \(Fin ix lt) ->
     f (index lt as ix) (index lt bs ix)
+  pure ()
+
+zip3M_ :: Monad m
+  => (a -> b -> c -> m d)
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> Vector n c
+  -> m ()
+{-# inline zip3M_ #-}
+zip3M_ f !n !as !bs !cs = do
+  Fin.ascendM_ n $ \(Fin ix lt) ->
+    f (index lt as ix) (index lt bs ix) (index lt cs ix)
   pure ()
 
 -- | Lazy right fold
