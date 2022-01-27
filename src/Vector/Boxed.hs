@@ -38,6 +38,8 @@ module Vector.Boxed
   , foldr
   , foldr'
   , foldMap
+  , all
+  , any
   , empty
   , singleton
   , doubleton
@@ -56,7 +58,7 @@ module Vector.Boxed
   , unsafeCast
   ) where
 
-import Prelude hiding (read,length,foldr,replicate,foldMap)
+import Prelude hiding (read,length,foldr,replicate,foldMap,all,any)
 
 import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
@@ -236,6 +238,14 @@ thaw (Nat n) (Vector x) = do
 foldMap :: Monoid m => (a -> m) -> Nat n -> Vector n a -> m
 {-# inline foldMap #-}
 foldMap f = foldr (\x acc -> f x <> acc) mempty
+
+all :: (a -> Bool) -> Nat n -> Vector n a -> Bool
+{-# inline all #-}
+all f !n v = foldr (\a acc -> f a && acc) True n v
+
+any :: (a -> Bool) -> Nat n -> Vector n a -> Bool
+{-# inline any #-}
+any f !n v = foldr (\a acc -> f a || acc) False n v
 
 foldr :: (a -> b -> b) -> b -> Nat n -> Vector n a -> b
 {-# inline foldr #-}
