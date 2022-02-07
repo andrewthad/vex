@@ -28,6 +28,7 @@ module Vector.Boxed
   , generateST
   , traverseST
   , map'
+  , imap'
   , append
   , zipWith'
   , foldlZipWithM
@@ -282,6 +283,16 @@ map' !n f v = runST $ do
   Fin.ascendM_ n
     (\(Fin ix lt) -> do
       write lt marr ix $! f (index lt v ix)
+    )
+  unsafeFreeze marr
+
+imap' :: Nat n -> (Fin n -> a -> b) -> Vector n a -> Vector n b
+{-# inline imap' #-}
+imap' !n f v = runST $ do
+  marr <- replicateM n errorThunk
+  Fin.ascendM_ n
+    (\fin@(Fin ix lt) -> do
+      write lt marr ix $! f fin (index lt v ix)
     )
   unsafeFreeze marr
 
