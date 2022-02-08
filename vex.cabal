@@ -22,6 +22,7 @@ library
     Vector.MaybeFin8
     Vector.MutableByteArray
     Vector.Optional
+    Vector.Optional128
   build-depends:
     , base >=4.12.0.0 && <5
     , contiguous >=0.6.1 && <0.7
@@ -29,6 +30,7 @@ library
     , run-st >=0.1 && <0.2
     , tuples >=0.1 && <0.2
     , natural-arithmetic >=0.1.2 && <0.2
+    , wide-word >=0.1.1 && <0.2
   hs-source-dirs: src
   ghc-options: -O2 -Wall
   default-language: Haskell2010
