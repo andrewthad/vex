@@ -144,7 +144,7 @@ itraverse_ !_ f (Vector mask0 vals) = go 0 mask0 where
               _ <- f (Fin (Unsafe.Nat logicalIx) Unsafe.Lt) val
               go (physicalIx + 1) (clearBit mask logicalIx)
 
-nothings :: (n < 64) -> Vector n a
+nothings :: (n < 128) -> Vector n a
 nothings _ = Vector 0 mempty
 
 map' :: Nat n -> (a -> b) -> Vector n a -> Vector n b
