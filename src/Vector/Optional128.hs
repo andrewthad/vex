@@ -45,7 +45,7 @@ import qualified GHC.TypeNats as GHC
 
 data Vector :: GHC.Nat -> Type -> Type where
   Vector :: -- invariant: popcnt(mask) === length(array)
-       !Word128
+       {-# UNPACK #-} !Word128
     -> !(SmallArray a)
     -> Vector n a
   deriving stock (Functor,Foldable,Traversable)
