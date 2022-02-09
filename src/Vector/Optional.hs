@@ -24,13 +24,14 @@ module Vector.Optional
   , nothings
   , update'
   , map'
+  , imap'
   , ifoldr
   , itraverse_
   , traverseST
   , traverseIntersection_
   ) where
 
-import Control.Monad.ST (ST)
+import Control.Monad.ST (ST,runST)
 import Data.Primitive (SmallArray)
 import Data.Kind (Type)
 import Data.Word (Word64)
@@ -151,6 +152,24 @@ nothings _ = Vector 0 mempty
 map' :: Nat n -> (a -> b) -> Vector n a -> Vector n b
 {-# inline map' #-}
 map' _ f (Vector mask vals) = Vector mask (C.map' f vals)
+
+imap' :: Nat n -> (Fin n -> a -> b) -> Vector n a -> Vector n b
+{-# inline imap' #-}
+imap' !_ f (Vector mask0 vals) = runST (PM.newSmallArray (PM.sizeofSmallArray vals) imapUninitialized >>= go 0 mask0) where
+  go !physicalIx !mask !dst = case mask of
+    0 -> do
+      dst' <- PM.unsafeFreezeSmallArray dst
+      pure (Vector mask0 dst')
+    _ -> case PM.indexSmallArray## vals physicalIx of
+      (# val #) -> do
+        let !logicalIx = countTrailingZeros mask
+        let !b = f (Fin (Unsafe.Nat logicalIx) Unsafe.Lt) val
+        PM.writeSmallArray dst physicalIx b
+        go (physicalIx + 1) (clearBit mask logicalIx) dst
+
+imapUninitialized :: a
+{-# noinline imapUninitialized #-}
+imapUninitialized = errorWithoutStackTrace "Vector.Optional: mistake in imap' implementation"
 
 -- | At any index present in both vectors, perform the action.
 traverseIntersection_ :: Applicative m => (a -> b -> m c) -> Nat n -> Vector n a -> Vector n b -> m ()
