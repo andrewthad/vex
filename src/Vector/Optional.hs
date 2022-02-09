@@ -27,6 +27,7 @@ module Vector.Optional
   , ifoldr
   , itraverse_
   , traverseST
+  , traverseIntersection_
   ) where
 
 import Control.Monad.ST (ST)
@@ -34,7 +35,7 @@ import Data.Primitive (SmallArray)
 import Data.Kind (Type)
 import Data.Word (Word64)
 import Data.Bits (popCount,unsafeShiftL,testBit,countTrailingZeros,clearBit)
-import Data.Bits (setBit)
+import Data.Bits ((.&.),setBit)
 import Arithmetic.Types (Nat,Fin(Fin),type (<))
 import Data.Functor.Classes (Eq1(..))
 
@@ -150,3 +151,20 @@ nothings _ = Vector 0 mempty
 map' :: Nat n -> (a -> b) -> Vector n a -> Vector n b
 {-# inline map' #-}
 map' _ f (Vector mask vals) = Vector mask (C.map' f vals)
+
+-- | At any index present in both vectors, perform the action.
+traverseIntersection_ :: Applicative m => (a -> b -> m c) -> Nat n -> Vector n a -> Vector n b -> m ()
+traverseIntersection_ f !_ (Vector maskA valsA) (Vector maskB valsB) = case maskC of
+  0 -> pure ()
+  _ -> go maskC
+  where
+  !maskC = maskA .&. maskB
+  go !mask = case mask of
+    0 -> pure ()
+    _ ->
+      let logicalIx = countTrailingZeros mask
+          physicalIxA = logicalToPhysical maskA logicalIx
+          !(# valA #) = PM.indexSmallArray## valsA physicalIxA
+          physicalIxB = logicalToPhysical maskB logicalIx
+          !(# valB #) = PM.indexSmallArray## valsB physicalIxB
+       in f valA valB *> go (clearBit mask logicalIx)
