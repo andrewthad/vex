@@ -48,6 +48,7 @@ module Vector.Boxed
   , replicate
   , replicateM
   , initialized
+  , fromList
   , shrink
   , unsafeFreeze
   , thaw
@@ -63,6 +64,7 @@ import Prelude hiding (read,length,foldr,replicate,foldMap,all,any)
 
 import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
+import Control.Monad.Trans.Maybe (MaybeT(MaybeT),runMaybeT)
 import Data.Kind (Type)
 import Data.Primitive (Array,MutableArray)
 import GHC.ST (ST(ST))
@@ -72,6 +74,7 @@ import qualified Arithmetic.Fin as Fin
 import qualified Arithmetic.Lt as Lt
 import qualified Arithmetic.Lte as Lte
 import qualified Arithmetic.Nat as Nat
+import qualified Control.Monad.ST as ST
 import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
 import qualified GHC.Exts as Exts
@@ -429,3 +432,20 @@ foldrZipWith ::
 {-# inline foldrZipWith #-}
 foldrZipWith f c0 !n !as !bs =
   Fin.descend n c0 (\(Fin ix lt) acc -> f (index lt as ix) (index lt bs ix) acc)
+
+-- | Fails with Nothing if the list is the wrong size
+fromList :: Nat n -> [a] -> Maybe (Vector n a)
+fromList !n xs0 = ST.runST $ do
+  dst <- initialized n errorThunk
+  m <- runMaybeT $ Fin.ascendM n xs0 $ \(Fin ix lt) xs -> case xs of
+    [] -> MaybeT (pure Nothing)
+    y : ys -> MaybeT $ do
+      write lt dst ix y
+      pure (Just ys)
+  case m of
+    Just remaining -> case remaining of
+      [] -> do
+        dst' <- unsafeFreeze dst
+        pure (Just dst')
+      _ -> pure Nothing
+    Nothing -> pure Nothing
