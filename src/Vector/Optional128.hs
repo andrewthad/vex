@@ -25,12 +25,16 @@ module Vector.Optional128
   , update'
   , map'
   , ifoldr
+  , izip
   , itraverse_
   , traverseST
+  , null
   ) where
 
+import Prelude hiding (null)
+
 import Arithmetic.Types (Nat,Fin(Fin),type (<))
-import Control.Monad.ST (ST)
+import Control.Monad.ST (ST,runST)
 import Data.Bits (popCount,unsafeShiftL,testBit,countTrailingZeros,clearBit)
 import Data.Bits (setBit)
 import Data.Functor.Classes (Eq1(..))
@@ -38,6 +42,8 @@ import Data.Kind (Type)
 import Data.Primitive (SmallArray)
 import Data.WideWord.Word128 (Word128)
 
+import qualified Arithmetic.Fin as Fin
+import qualified Arithmetic.Nat as Nat
 import qualified Arithmetic.Unsafe as Unsafe
 import qualified Data.Primitive as PM
 import qualified Data.Primitive.Contiguous as C
@@ -48,7 +54,7 @@ data Vector :: GHC.Nat -> Type -> Type where
        {-# UNPACK #-} !Word128
     -> !(SmallArray a)
     -> Vector n a
-  deriving stock (Functor,Foldable,Traversable)
+  deriving stock (Eq,Functor,Foldable,Traversable)
 
 instance Eq1 (Vector n) where
   liftEq f (Vector mask0 vals0) (Vector mask1 vals1) = if mask0 == mask1
@@ -83,6 +89,27 @@ ifoldr f b0 !_ (Vector mask0 vals) = go 0 mask0 where
       (# val #) ->
         let logicalIx = countTrailingZeros mask
          in f (Fin (Unsafe.Nat logicalIx) Unsafe.Lt) val (go (physicalIx + 1) (clearBit mask logicalIx))
+
+izip :: Nat n
+    -> (Fin n -> Maybe a -> Maybe b -> Maybe c)
+    -> Vector n a
+    -> Vector n b
+    -> Vector n c
+izip n f xs ys = runST $ do
+  dst <- PM.newSmallArray (Nat.demote n) (errorWithoutStackTrace "error in Vector.Optional.zip")
+  (maskZ, phyLen) <- Fin.ascendM n (0, 0) $ \fIx@(Fin ix lt) (maskZ, phyIx) ->
+    case (index lt xs ix, index lt ys ix) of
+      (Nothing, Nothing) -> pure (maskZ, phyIx)
+      (mx, my) -> case f fIx mx my of
+        Nothing -> pure (maskZ, phyIx)
+        Just z -> do
+          let i = Nat.demote ix
+          C.write dst i z
+          pure (setBit maskZ i, phyIx + 1)
+  PM.shrinkSmallMutableArray dst phyLen
+  arr <- PM.unsafeFreezeSmallArray dst
+  pure (Vector maskZ arr)
+
 
 -- Precondition: bit at logical position is set to True.
 logicalToPhysical :: Word128 -> Int -> Int
@@ -150,3 +177,7 @@ nothings _ = Vector 0 mempty
 map' :: Nat n -> (a -> b) -> Vector n a -> Vector n b
 {-# inline map' #-}
 map' _ f (Vector mask vals) = Vector mask (C.map' f vals)
+
+null :: Vector n a -> Bool
+{-# inline null #-}
+null (Vector n _) = n == 0
