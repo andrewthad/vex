@@ -25,17 +25,17 @@ module Vector.Optional128
   , update'
   , map'
   , ifoldr
-  , izip
   , itraverse_
   , traverseST
   , null
+  , union
   ) where
 
 import Prelude hiding (null)
 
 import Arithmetic.Types (Nat,Fin(Fin),type (<))
 import Control.Monad.ST (ST,runST)
-import Data.Bits (popCount,unsafeShiftL,testBit,countTrailingZeros,clearBit)
+import Data.Bits (popCount,unsafeShiftL,testBit,countTrailingZeros,clearBit,(.|.))
 import Data.Bits (setBit)
 import Data.Functor.Classes (Eq1(..))
 import Data.Kind (Type)
@@ -89,27 +89,6 @@ ifoldr f b0 !_ (Vector mask0 vals) = go 0 mask0 where
       (# val #) ->
         let logicalIx = countTrailingZeros mask
          in f (Fin (Unsafe.Nat logicalIx) Unsafe.Lt) val (go (physicalIx + 1) (clearBit mask logicalIx))
-
-izip :: Nat n
-    -> (Fin n -> Maybe a -> Maybe b -> Maybe c)
-    -> Vector n a
-    -> Vector n b
-    -> Vector n c
-izip n f xs ys = runST $ do
-  dst <- PM.newSmallArray (Nat.demote n) (errorWithoutStackTrace "error in Vector.Optional.zip")
-  (maskZ, phyLen) <- Fin.ascendM n (0, 0) $ \fIx@(Fin ix lt) (maskZ, phyIx) ->
-    case (index lt xs ix, index lt ys ix) of
-      (Nothing, Nothing) -> pure (maskZ, phyIx)
-      (mx, my) -> case f fIx mx my of
-        Nothing -> pure (maskZ, phyIx)
-        Just z -> do
-          let i = Nat.demote ix
-          C.write dst i z
-          pure (setBit maskZ i, phyIx + 1)
-  PM.shrinkSmallMutableArray dst phyLen
-  arr <- PM.unsafeFreezeSmallArray dst
-  pure (Vector maskZ arr)
-
 
 -- Precondition: bit at logical position is set to True.
 logicalToPhysical :: Word128 -> Int -> Int
@@ -181,3 +160,37 @@ map' _ f (Vector mask vals) = Vector mask (C.map' f vals)
 null :: Vector n a -> Bool
 {-# inline null #-}
 null (Vector n _) = n == 0
+
+-- | Left-biased union of the vectors.
+union ::
+     Nat n
+  -> Vector n a
+  -> Vector n a
+  -> Vector n a
+union !_ va@(Vector maskA valsA) vb@(Vector maskB valsB)
+  | maskA == 0 = vb
+  | maskB == 0 = va
+  | otherwise = runST $ do
+      let maskC = maskA .|. maskB
+          physicalLen = popCount maskC
+      dst <- PM.newSmallArray physicalLen (errorWithoutStackTrace "error in Vector.Optional.union")
+      let go !physicalIxC !mask = case mask of
+            0 -> do
+              dst' <- PM.unsafeFreezeSmallArray dst
+              pure (Vector maskC dst')
+            _ ->
+              let logicalIx = countTrailingZeros mask
+               in case testBit maskA logicalIx of
+                    True -> do
+                      let physicalIxA = logicalToPhysical maskA logicalIx
+                      let !(# valA #) = PM.indexSmallArray## valsA physicalIxA
+                      PM.writeSmallArray dst physicalIxC valA
+                      go (physicalIxC + 1) (clearBit mask logicalIx)
+                    False -> do
+                      -- If the bit was not set in A, it must have been set
+                      -- in B, so we may omit the testBit check here.
+                      let physicalIxB = logicalToPhysical maskB logicalIx
+                      let !(# valB #) = PM.indexSmallArray## valsB physicalIxB
+                      PM.writeSmallArray dst physicalIxC valB
+                      go (physicalIxC + 1) (clearBit mask logicalIx)
+      go 0 maskC
