@@ -175,8 +175,8 @@ imap' !_ f (Vector (Word128 mask0 mask1) vals) =
       pure (Vector (Word128 mask0 mask1) dst')
     _ -> case PM.indexSmallArray## vals physicalIx of
       (# val #) -> do
-        let !logicalIx = 64 + countTrailingZeros mask
-        let !b = f (Fin (Unsafe.Nat logicalIx) Unsafe.Lt) val
+        let !logicalIx = countTrailingZeros mask
+        let !b = f (Fin (Unsafe.Nat (logicalIx + 64)) Unsafe.Lt) val
         PM.writeSmallArray dst physicalIx b
         goA (physicalIx + 1) (clearBit mask logicalIx) dst
 
