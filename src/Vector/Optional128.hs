@@ -172,7 +172,7 @@ imap' !_ f (Vector (Word128 mask1 mask0) vals) =
   goB !physicalIx !mask !dst = case mask of
     0 -> do
       dst' <- PM.unsafeFreezeSmallArray dst
-      pure (Vector (Word128 mask0 mask1) dst')
+      pure (Vector (Word128 mask1 mask0) dst')
     _ -> case PM.indexSmallArray## vals physicalIx of
       (# val #) -> do
         let !logicalIx = countTrailingZeros mask
