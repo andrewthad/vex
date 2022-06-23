@@ -6,10 +6,12 @@
 {-# language DerivingStrategies #-}
 {-# language ExplicitNamespaces #-}
 {-# language GADTSyntax #-}
+{-# language GeneralizedNewtypeDeriving #-}
 {-# language KindSignatures #-}
 {-# language MagicHash #-}
 {-# language RankNTypes #-}
 {-# language ScopedTypeVariables #-}
+{-# language StandaloneDeriving #-}
 {-# language TypeApplications #-}
 {-# language TypeOperators #-}
 {-# language UnboxedTuples #-}
@@ -31,11 +33,14 @@ module Vector.Boxed
   , imap'
   , append
   , zipWith'
+  , zipWith3'
   , foldlZipWithM
   , zipM_
   , zip3M_
   , foldrMapZipWith
   , foldrZipWith
+  , foldrZipWith3
+  , foldrZipWith4
   , foldr
   , foldr'
   , foldMap
@@ -82,6 +87,9 @@ import qualified GHC.Exts as Exts
 newtype Vector :: GHC.Nat -> Type -> Type where
   Vector :: Array a -> Vector n a
   deriving stock (Functor,Foldable,Traversable)
+
+deriving newtype instance Eq a => Eq (Vector n a)
+deriving newtype instance Show a => Show (Vector n a)
 
 newtype MutableVector :: Type -> GHC.Nat -> Type -> Type where
   MutableVector :: MutableArray s a -> MutableVector s n a
@@ -374,6 +382,21 @@ zipWith' f !n !as !bs = runST $ do
     write lt dst ix z
   unsafeFreeze dst
 
+zipWith3' ::
+     (a -> b -> c -> d)
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> Vector n c
+  -> Vector n d
+{-# inline zipWith3' #-}
+zipWith3' f !n !as !bs !cs = runST $ do
+  dst <- initialized n errorThunk
+  Fin.ascendM_ n $ \(Fin ix lt) -> do
+    let !z = f (index lt as ix) (index lt bs ix) (index lt cs ix)
+    write lt dst ix z
+  unsafeFreeze dst
+
 foldlZipWithM :: Monad m
   => (c -> a -> b -> m c)
   -> c
@@ -432,6 +455,33 @@ foldrZipWith ::
 {-# inline foldrZipWith #-}
 foldrZipWith f c0 !n !as !bs =
   Fin.descend n c0 (\(Fin ix lt) acc -> f (index lt as ix) (index lt bs ix) acc)
+
+-- | Lazy right fold over three arrays
+foldrZipWith3 ::
+     (a -> b -> c -> d -> d)
+  -> d
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> Vector n c
+  -> d
+{-# inline foldrZipWith3 #-}
+foldrZipWith3 f d0 !n !as !bs !cs =
+  Fin.descend n d0 (\(Fin ix lt) acc -> f (index lt as ix) (index lt bs ix) (index lt cs ix) acc)
+
+-- | Lazy right fold over four arrays
+foldrZipWith4 ::
+     (a -> b -> c -> d -> e -> e)
+  -> e
+  -> Nat n
+  -> Vector n a
+  -> Vector n b
+  -> Vector n c
+  -> Vector n d
+  -> e
+{-# inline foldrZipWith4 #-}
+foldrZipWith4 f d0 !n !as !bs !cs !ds =
+  Fin.descend n d0 (\(Fin ix lt) acc -> f (index lt as ix) (index lt bs ix) (index lt cs ix) (index lt ds ix) acc)
 
 -- | Fails with Nothing if the list is the wrong size
 fromList :: Nat n -> [a] -> Maybe (Vector n a)
