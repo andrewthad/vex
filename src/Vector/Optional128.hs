@@ -158,7 +158,7 @@ map' _ f (Vector mask vals) = Vector mask (C.map' f vals)
 
 imap' :: Nat n -> (Fin n -> a -> b) -> Vector n a -> Vector n b
 {-# inline imap' #-}
-imap' !_ f (Vector (Word128 mask0 mask1) vals) =
+imap' !_ f (Vector (Word128 mask1 mask0) vals) =
   runST (PM.newSmallArray (PM.sizeofSmallArray vals) imapUninitialized >>= goA 0 mask0)
   where
   goA !physicalIx !mask !dst = case mask of
