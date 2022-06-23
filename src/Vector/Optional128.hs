@@ -162,7 +162,7 @@ imap' !_ f (Vector (Word128 mask0 mask1) vals) =
   runST (PM.newSmallArray (PM.sizeofSmallArray vals) imapUninitialized >>= goA 0 mask0)
   where
   goA !physicalIx !mask !dst = case mask of
-    0 -> goB 0 mask1 dst
+    0 -> goB physicalIx mask1 dst
     _ -> case PM.indexSmallArray## vals physicalIx of
       (# val #) -> do
         let !logicalIx = countTrailingZeros mask
