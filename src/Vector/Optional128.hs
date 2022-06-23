@@ -24,6 +24,7 @@ module Vector.Optional128
   , nothings
   , update'
   , map'
+  , imap'
   , ifoldr
   , itraverse_
   , traverseST
@@ -40,10 +41,8 @@ import Data.Bits (setBit)
 import Data.Functor.Classes (Eq1(..))
 import Data.Kind (Type)
 import Data.Primitive (SmallArray)
-import Data.WideWord.Word128 (Word128)
+import Data.WideWord.Word128 (Word128(Word128))
 
-import qualified Arithmetic.Fin as Fin
-import qualified Arithmetic.Nat as Nat
 import qualified Arithmetic.Unsafe as Unsafe
 import qualified Data.Primitive as PM
 import qualified Data.Primitive.Contiguous as C
@@ -156,6 +155,34 @@ nothings _ = Vector 0 mempty
 map' :: Nat n -> (a -> b) -> Vector n a -> Vector n b
 {-# inline map' #-}
 map' _ f (Vector mask vals) = Vector mask (C.map' f vals)
+
+imap' :: Nat n -> (Fin n -> a -> b) -> Vector n a -> Vector n b
+{-# inline imap' #-}
+imap' !_ f (Vector (Word128 mask1 mask0) vals) =
+  runST (PM.newSmallArray (PM.sizeofSmallArray vals) imapUninitialized >>= goA 0 mask0)
+  where
+  goA !physicalIx !mask !dst = case mask of
+    0 -> goB physicalIx mask1 dst
+    _ -> case PM.indexSmallArray## vals physicalIx of
+      (# val #) -> do
+        let !logicalIx = countTrailingZeros mask
+        let !b = f (Fin (Unsafe.Nat logicalIx) Unsafe.Lt) val
+        PM.writeSmallArray dst physicalIx b
+        goA (physicalIx + 1) (clearBit mask logicalIx) dst
+  goB !physicalIx !mask !dst = case mask of
+    0 -> do
+      dst' <- PM.unsafeFreezeSmallArray dst
+      pure (Vector (Word128 mask1 mask0) dst')
+    _ -> case PM.indexSmallArray## vals physicalIx of
+      (# val #) -> do
+        let !logicalIx = countTrailingZeros mask
+        let !b = f (Fin (Unsafe.Nat (logicalIx + 64)) Unsafe.Lt) val
+        PM.writeSmallArray dst physicalIx b
+        goA (physicalIx + 1) (clearBit mask logicalIx) dst
+
+imapUninitialized :: a
+{-# noinline imapUninitialized #-}
+imapUninitialized = errorWithoutStackTrace "Vector.Optional128: mistake in imap' implementation"
 
 null :: Vector n a -> Bool
 {-# inline null #-}
