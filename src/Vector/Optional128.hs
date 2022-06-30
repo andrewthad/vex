@@ -178,7 +178,7 @@ imap' !_ f (Vector (Word128 mask1 mask0) vals) =
         let !logicalIx = countTrailingZeros mask
         let !b = f (Fin (Unsafe.Nat (logicalIx + 64)) Unsafe.Lt) val
         PM.writeSmallArray dst physicalIx b
-        goA (physicalIx + 1) (clearBit mask logicalIx) dst
+        goB (physicalIx + 1) (clearBit mask logicalIx) dst
 
 imapUninitialized :: a
 {-# noinline imapUninitialized #-}
