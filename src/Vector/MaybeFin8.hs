@@ -51,6 +51,7 @@ import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt),type (:=:)(Eq))
 
 import qualified GHC.TypeNats as GHC
 import qualified GHC.Exts as Exts
+import qualified GHC.Prim.Compat as Compat
 
 data Vector :: GHC.Nat -> GHC.Nat -> Type where
   Vector :: Exts.ByteArray# -> Vector b n
@@ -96,7 +97,7 @@ index ::
   -> Maybe (Fin b)
 {-# inline index #-}
 index Lt (Vector arr) (Nat (I# i)) =
-  case Exts.indexWord8Array# arr i of
+  case Compat.indexWord8Array# arr i of
     255## -> Nothing
     w -> Just (Fin (Nat (I# (Exts.word2Int# w))) Lt)
 
@@ -107,7 +108,7 @@ read ::
   -> ST s (Maybe (Fin b))
 {-# inline read #-}
 read Lt (MutableVector arr) (Nat (I# i)) = ST
-  (\s0 -> case Exts.readWord8Array# arr i s0 of
+  (\s0 -> case Compat.readWord8Array# arr i s0 of
     (# s1, v #) ->
       (# s1, case v of {255## -> Nothing; _ -> Just (Fin (Nat (I# (Exts.word2Int# v))) Lt)} #)
   )
@@ -119,12 +120,12 @@ write ::
   -> Maybe (Fin b)
   -> ST s ()
 {-# inline write #-}
-write Lt (MutableVector arr) (Nat (I# i)) Nothing  = ST
-  (\s0 -> case Exts.writeWord8Array# arr i 255## s0 of
+write Lt (MutableVector arr) (Nat (I# i)) Nothing = ST
+  (\s0 -> case Compat.writeWord8Array# arr i 255## s0 of
     s1 -> (# s1, () #)
   )
 write Lt (MutableVector arr) (Nat (I# i)) (Just (Fin (Nat (I# e)) Lt)) = ST
-  (\s0 -> case Exts.writeWord8Array# arr i (Exts.int2Word# e) s0 of
+  (\s0 -> case Compat.writeWord8Array# arr i (Exts.int2Word# e) s0 of
     s1 -> (# s1, () #)
   )
 

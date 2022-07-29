@@ -59,6 +59,7 @@ import qualified Arithmetic.Fin as Fin
 import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
 import qualified GHC.Exts as Exts
+import qualified GHC.Prim.Compat as Compat
 
 data Vector :: GHC.Nat -> GHC.Nat -> Type where
   Vector :: Exts.ByteArray# -> Vector b n
@@ -108,7 +109,7 @@ index ::
   -> Fin b
 {-# inline index #-}
 index Lt (Vector arr) (Nat (I# i)) =
-  Fin (Nat (I# (Exts.word2Int# (Exts.indexWord16Array# arr i)))) Lt
+  Fin (Nat (I# (Exts.word2Int# (Compat.indexWord16Array# arr i)))) Lt
 
 read ::
      (m < n) -- ^ Evidence the index is in-bounds
@@ -117,7 +118,7 @@ read ::
   -> ST s (Fin b)
 {-# inline read #-}
 read Lt (MutableVector arr) (Nat (I# i)) = ST
-  (\s0 -> case Exts.readWord16Array# arr i s0 of
+  (\s0 -> case Compat.readWord16Array# arr i s0 of
     (# s1, val #) -> (# s1, Fin (Nat (I# (Exts.word2Int# val))) Lt #)
   )
 
@@ -129,7 +130,7 @@ write ::
   -> ST s ()
 {-# inline write #-}
 write Lt (MutableVector arr) (Nat (I# i)) (Fin (Nat (I# e)) Lt) = ST
-  (\s0 -> case Exts.writeWord16Array# arr i (Exts.int2Word# e) s0 of
+  (\s0 -> case Compat.writeWord16Array# arr i (Exts.int2Word# e) s0 of
     s1 -> (# s1, () #)
   )
 
