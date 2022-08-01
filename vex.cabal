@@ -13,7 +13,19 @@ maintainer:          andrew.thaddeus@gmail.com
 category:            Data
 extra-source-files:  CHANGELOG.md
 
+Flag checked
+  Description: Add bounds checks
+  Default: False
+  Manual: True
+
 library
+  if flag(checked)
+    hs-source-dirs: src-checked
+  else
+    hs-source-dirs: src-unchecked
+  other-modules:
+    Vector.Boxed.Internal
+    Vector.Boxed.Types
   exposed-modules:
     Vector.Boxed
     Vector.Fin

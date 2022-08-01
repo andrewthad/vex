@@ -67,6 +67,9 @@ module Vector.Boxed
 
 import Prelude hiding (read,length,foldr,replicate,foldMap,all,any)
 
+import Vector.Boxed.Internal (read,write,index)
+import Vector.Boxed.Types (Vector(..),MutableVector(..))
+
 import Arithmetic.Types (Fin(Fin),type (:=:))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt), type (<=)(Lte))
 import Control.Monad.Trans.Maybe (MaybeT(MaybeT),runMaybeT)
@@ -83,16 +86,6 @@ import qualified Control.Monad.ST as ST
 import qualified Data.Primitive as PM
 import qualified GHC.TypeNats as GHC
 import qualified GHC.Exts as Exts
-
-newtype Vector :: GHC.Nat -> Type -> Type where
-  Vector :: Array a -> Vector n a
-  deriving stock (Functor,Foldable,Traversable)
-
-deriving newtype instance Eq a => Eq (Vector n a)
-deriving newtype instance Show a => Show (Vector n a)
-
-newtype MutableVector :: Type -> GHC.Nat -> Type -> Type where
-  MutableVector :: MutableArray s a -> MutableVector s n a
 
 new ::
      Nat n
@@ -165,34 +158,6 @@ length :: Vector n a -> Nat n
 {-# INLINE length #-}
 -- this is a core operation
 length (Vector x) = Nat (PM.sizeofArray x)
-
-index ::
-     (m < n) -- ^ Evidence the index is in-bounds
-  -> Vector n a -- ^ Array
-  -> Nat m -- ^ Index
-  -> a
-{-# INLINE index #-}
--- this is a core operation
-index Lt (Vector arr) (Nat i) = PM.indexArray arr i
-
-read ::
-     (m < n) -- ^ Evidence the index is in-bounds
-  -> MutableVector s n a -- ^ Array
-  -> Nat m -- ^ Index
-  -> ST s a
-{-# INLINE read #-}
--- this is a core operation
-read Lt (MutableVector arr) (Nat i) = PM.readArray arr i
-
-write ::
-     (m < n) -- ^ Evidence the index is in-bounds
-  -> MutableVector s n a -- ^ Array
-  -> Nat m -- ^ Index
-  -> a
-  -> ST s ()
-{-# INLINE write #-}
--- this is a core operation
-write Lt (MutableVector arr) (Nat i) x = PM.writeArray arr i x
 
 -- | Make a copy of the mutable vector.
 duplicate :: Nat n -> MutableVector s n a -> ST s (MutableVector s n a)
