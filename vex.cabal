@@ -26,6 +26,8 @@ library
   other-modules:
     Vector.Boxed.Internal
     Vector.Boxed.Types
+    Vector.MutableByteArray.Internal
+    Vector.MutableByteArray.Types
   exposed-modules:
     Vector.Boxed
     Vector.Fin
