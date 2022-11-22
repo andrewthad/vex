@@ -19,6 +19,7 @@ module Vector.Fin16
   , MutableVector
     -- Create
   , uninitialized
+  , initialized
   , replicate
     -- Weaken
   , weakenMutable
@@ -49,8 +50,6 @@ import GHC.Exts (Int(I#),(*#))
 import GHC.ST (ST(ST))
 import Data.Word (Word16)
 import Data.Kind (Type)
-import GHC.TypeNats (type (+))
-import Foreign.Storable (sizeOf)
 import Arithmetic.Types (Fin(Fin))
 import Arithmetic.Unsafe (type (<=)(Lte))
 import Arithmetic.Unsafe (Nat(Nat),type (<)(Lt),type (:=:)(Eq))
@@ -79,6 +78,15 @@ uninitialized Lte (Nat (I# sz)) = ST
   ( \s0 -> case Exts.newByteArray# (sz *# 2# ) s0 of
     (# s1, arr #) -> (# s1, MutableVector arr #)
   )
+
+initialized :: forall (b :: GHC.Nat) (n :: GHC.Nat) (s :: Type).
+  (b <= 65536) -> Nat n -> Fin b -> ST s (MutableVector s b n)
+{-# inline initialized #-}
+initialized _ (Nat sz) (Fin (Nat e) _) = do
+  dst <- PM.newByteArray (2 * sz)
+  PM.setByteArray dst 0 sz (fromIntegral @Int @Word16 e)
+  case dst of
+    MutableByteArray x -> pure (MutableVector x)
 
 -- | Create an array in which all elements are the same value.
 replicate :: forall (b :: GHC.Nat) (n :: GHC.Nat).
