@@ -17,6 +17,8 @@ module Vector.Fin16
   ( -- Types
     Vector
   , MutableVector
+    -- Constants
+  , empty
     -- Create
   , uninitialized
   , initialized
@@ -65,6 +67,11 @@ data Vector :: GHC.Nat -> GHC.Nat -> Type where
 
 data MutableVector :: Type -> GHC.Nat -> GHC.Nat -> Type where
   MutableVector :: Exts.MutableByteArray# s -> MutableVector s b n
+
+-- | The empty vector. It is not necessary to prove anything about
+-- the upper bound.
+empty :: Vector b 0
+empty = Vector (case mempty of {ByteArray a -> a})
 
 -- | Create an array of uninitialized memory. This is
 -- exceptionally unsafe when working with a vector of @Fin@
