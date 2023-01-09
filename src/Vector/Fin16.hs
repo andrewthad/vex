@@ -23,6 +23,7 @@ module Vector.Fin16
   , uninitialized
   , initialized
   , replicate
+  , identityM
     -- Weaken
   , weakenMutable
   , substitute
@@ -85,6 +86,16 @@ uninitialized Lte (Nat (I# sz)) = ST
   ( \s0 -> case Exts.newByteArray# (sz *# 2# ) s0 of
     (# s1, arr #) -> (# s1, MutableVector arr #)
   )
+
+-- | Create a mutable vector where all elements are initialized to their
+-- position in the vector.
+identityM :: forall (n :: GHC.Nat) (s :: Type). (n <= 65536) -> Nat n -> ST s (MutableVector s n n)
+{-# inline identityM #-}
+identityM lte !n = do
+  dst <- uninitialized lte n
+  Fin.ascendM_ n $ \fin@(Fin ix lt) -> do
+    write lt dst ix fin
+  pure dst
 
 initialized :: forall (b :: GHC.Nat) (n :: GHC.Nat) (s :: Type).
   (b <= 65536) -> Nat n -> Fin b -> ST s (MutableVector s b n)
@@ -205,7 +216,7 @@ foldlM' :: Monad m
   -> Vector b n
   -> m a
 {-# inline foldlM' #-}
-foldlM' g !a0 !n !v = Fin.ascendM n a0                                      
+foldlM' g !a0 !n !v = Fin.ascendM n a0
   (\(Fin ix lt) !a -> g a (index lt v ix))                                  
 
 traverse_ :: Monad m
