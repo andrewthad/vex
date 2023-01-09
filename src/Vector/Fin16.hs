@@ -24,6 +24,7 @@ module Vector.Fin16
   , initialized
   , replicate
   , identityM
+  , thaw
     -- Weaken
   , weakenMutable
   , substitute
@@ -96,6 +97,13 @@ identityM lte !n = do
   Fin.ascendM_ n $ \fin@(Fin ix lt) -> do
     write lt dst ix fin
   pure dst
+
+-- | Make a mutable copy of an immutable vector.
+thaw :: Nat n -> Vector b n -> ST s (MutableVector s b n)
+{-# inline thaw #-}
+thaw (Nat n) (Vector x) = do
+  MutableByteArray y <- PM.thawByteArray (ByteArray x) 0 (2 * n)
+  pure (MutableVector y)
 
 initialized :: forall (b :: GHC.Nat) (n :: GHC.Nat) (s :: Type).
   (b <= 65536) -> Nat n -> Fin b -> ST s (MutableVector s b n)
