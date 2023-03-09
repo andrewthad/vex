@@ -54,6 +54,7 @@ module Vector.Boxed
   , replicateM
   , initialized
   , fromList
+  , fromListN
   , shrink
   , unsafeFreeze
   , thaw
@@ -447,6 +448,10 @@ foldrZipWith4 ::
 {-# inline foldrZipWith4 #-}
 foldrZipWith4 f d0 !n !as !bs !cs !ds =
   Fin.descend n d0 (\(Fin ix lt) acc -> f (index lt as ix) (index lt bs ix) (index lt cs ix) (index lt ds ix) acc)
+
+-- | Fails with Nothing if the list is the wrong size
+fromListN :: Nat n -> [a] -> Maybe (Vector n a)
+fromListN = fromList
 
 -- | Fails with Nothing if the list is the wrong size
 fromList :: Nat n -> [a] -> Maybe (Vector n a)
