@@ -31,6 +31,7 @@ module Vector.Optional
   , traverseIntersection_
   , null
   , union
+  , unionWith
   ) where
 
 import Prelude hiding (null,replicate)
@@ -125,6 +126,50 @@ union !_ va@(Vector maskA valsA) vb@(Vector maskB valsB)
                       PM.writeSmallArray dst physicalIxC valB
                       go (physicalIxC + 1) (clearBit mask logicalIx)
       go 0 maskC
+
+unionWith ::
+     (a -> a -> a)
+  -> Nat n
+  -> Vector n a
+  -> Vector n a
+  -> Vector n a
+unionWith f !_ va@(Vector maskA valsA) vb@(Vector maskB valsB)
+  | maskA == 0 = vb
+  | maskB == 0 = va
+  | otherwise = runST $ do
+      let maskC = maskA .|. maskB
+          physicalLen = popCount maskC
+      dst <- PM.newSmallArray physicalLen (errorWithoutStackTrace "error in Vector.Optional.union")
+      let go !physicalIxC !mask = case mask of
+            0 -> do
+              dst' <- PM.unsafeFreezeSmallArray dst
+              pure (Vector maskC dst')
+            _ ->
+              let logicalIx = countTrailingZeros mask
+               in case testBit maskA logicalIx of
+                    True -> case testBit maskB logicalIx of
+                      True -> do
+                        let !physicalIxA = logicalToPhysical maskA logicalIx
+                        let !(# valA #) = PM.indexSmallArray## valsA physicalIxA
+                        let !physicalIxB = logicalToPhysical maskB logicalIx
+                        let !(# valB #) = PM.indexSmallArray## valsB physicalIxB
+                        PM.writeSmallArray dst physicalIxC $! f valA valB
+                        go (physicalIxC + 1) (clearBit mask logicalIx)
+                      False -> do
+                        let !physicalIxA = logicalToPhysical maskA logicalIx
+                        let !(# valA #) = PM.indexSmallArray## valsA physicalIxA
+                        PM.writeSmallArray dst physicalIxC valA
+                        go (physicalIxC + 1) (clearBit mask logicalIx)
+                    False -> do
+                      -- If the bit was not set in A, it must have been set
+                      -- in B, so we may omit the testBit check here.
+                      let physicalIxB = logicalToPhysical maskB logicalIx
+                      let !(# valB #) = PM.indexSmallArray## valsB physicalIxB
+                      PM.writeSmallArray dst physicalIxC valB
+                      go (physicalIxC + 1) (clearBit mask logicalIx)
+      go 0 maskC
+
+
 
 -- Precondition: bit at logical position is set to True.
 logicalToPhysical :: Word64 -> Int -> Int
