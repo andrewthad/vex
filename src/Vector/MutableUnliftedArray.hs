@@ -17,11 +17,15 @@
 module Vector.MutableUnliftedArray
   ( -- Types
     MutableVector
+  , Vector
     -- Create
   , uninitialized
     -- Index
   , read
   , write
+  , index
+    -- Freeze
+  , unsafeFreeze
   ) where
 
 import Prelude hiding (read,length)
@@ -34,6 +38,9 @@ import Data.Primitive.Unlifted.Array (MutableUnliftedArray(..))
 
 import qualified GHC.Exts as Exts
 import qualified GHC.TypeNats as GHC
+
+data Vector :: Type -> GHC.Nat -> Type -> Type where
+  Vector :: Exts.ArrayArray# -> Vector s n a
 
 data MutableVector :: Type -> GHC.Nat -> Type -> Type where
   MutableVector :: Exts.MutableArrayArray# s -> MutableVector s n a
@@ -48,6 +55,15 @@ uninitialized (Nat (I# sz)) = ST
   ( \s0 -> case Exts.newArrayArray# sz s0 of
     (# s1, arr #) -> (# s1, MutableVector arr #)
   )
+
+index ::
+     (m < n) -- ^ Evidence the index is in-bounds
+  -> Vector s n b -- ^ Array
+  -> Nat m -- ^ Index
+  -> MutableUnliftedArray s a
+{-# inline index #-}
+index Lt (Vector arr) (Nat (I# i)) =
+  MutableUnliftedArray (Exts.unsafeCoerce# (Exts.indexArrayArrayArray# arr i))
 
 read ::
      (m < n) -- ^ Evidence the index is in-bounds
@@ -71,3 +87,12 @@ write ::
 -- this is a core operation
 write Lt (MutableVector arr) (Nat (I# i)) (MutableUnliftedArray x) = ST
   (\s0 -> (# Exts.writeMutableArrayArrayArray# arr i x s0, () #))
+
+unsafeFreeze ::
+     MutableVector s n a
+  -> ST s (Vector s n a)
+{-# inline unsafeFreeze #-}
+unsafeFreeze (MutableVector marr) = ST
+  (\s0 -> case Exts.unsafeFreezeArrayArray# marr s0 of
+    (# s1, arr #) -> (# s1, Vector arr #)
+  )
