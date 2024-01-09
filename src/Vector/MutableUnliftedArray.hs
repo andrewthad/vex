@@ -13,7 +13,7 @@
 {-# language TypeOperators #-}
 {-# language UnboxedTuples #-}
 
--- | Length-index arrays of 'MutableByteArray'.
+-- | Length-index arrays of 'MutableUnliftedArray'.
 module Vector.MutableUnliftedArray
   ( -- Types
     MutableVector
