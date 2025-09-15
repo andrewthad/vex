@@ -38,9 +38,11 @@ library
     Vector.MutableUnliftedArray
     Vector.Optional
     Vector.Optional128
+    Vector.Optional256
   build-depends:
     , base >=4.17.0.0 && <5
     , contiguous >=0.6.1 && <0.7
+    , containers >=0.6
     , primitive >=0.7 && <0.10
     , primitive-unlifted >=2.1
     , run-st >=0.1 && <0.2
