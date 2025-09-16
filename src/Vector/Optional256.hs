@@ -122,7 +122,7 @@ assign ::
 {-# inline assign #-}
 assign _ _ (Vector m) ix a = Vector (IntMap.insert (Nat.demote ix) a m)
 
-nothings :: (n < 128) -> Vector n a
+nothings :: (n < 256) -> Vector n a
 nothings _ = Vector mempty
 
 ifoldMap :: Monoid m => (Fin n -> a -> m) -> Nat n -> Vector n a -> m
